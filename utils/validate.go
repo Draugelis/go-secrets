@@ -7,7 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func ValidateToken(tokenHMAC string) bool {
+func IsValidToken(tokenHMAC string) bool {
 	redisClient := GetRedisClient()
 	val, err := redisClient.Get(context.Background(), tokenHMAC).Result()
 	if err == redis.Nil {

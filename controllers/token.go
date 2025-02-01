@@ -41,3 +41,12 @@ func IssueToken(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"token": token, "ttl": ttl})
 }
+
+func ValidateToken(ctx *gin.Context) {
+	ctx.JSON(
+		http.StatusOK,
+		gin.H{
+			"valid": true,
+		},
+	)
+}
