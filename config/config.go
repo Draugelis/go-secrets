@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"errors"
 	"sync"
 )
 
@@ -23,9 +23,9 @@ func SetServerToken(token string) {
 	GetConfig().ServerToken = token
 }
 
-func GetServerToken() string {
+func GetServerToken() (string, error) {
 	if instance == nil || instance.ServerToken == "" {
-		log.Fatal("Server token is not set.")
+		return "", errors.New("server token is not set")
 	}
-	return instance.ServerToken
+	return instance.ServerToken, nil
 }
