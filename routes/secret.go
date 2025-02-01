@@ -11,5 +11,6 @@ func SecretRoutes(router *gin.Engine) {
 	secretGroup := router.Group("/secret").Use(middlewares.AuthMiddleware())
 	{
 		secretGroup.POST("/*key", controllers.StoreSecret)
+		secretGroup.GET("/*key", controllers.GetSecret)
 	}
 }

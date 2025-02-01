@@ -13,6 +13,11 @@ type SecretRequest struct {
 	Value string `json:"value" binding:"required"`
 }
 
+type StoreResponse struct {
+	Key string `json:"key"`
+	TTL int    `json:"ttl"`
+}
+
 func StoreSecret(ctx *gin.Context) {
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
@@ -70,15 +75,17 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	secretPath := tokenHMAC + ":secret:" + secretKeyPath
+	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store secret"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"key": secretKeyPath,
-		"ttl": int(ttl.Seconds()),
-	})
+	response := StoreResponse{
+		Key: secretKeyPath,
+		TTL: int(ttl.Seconds()),
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
