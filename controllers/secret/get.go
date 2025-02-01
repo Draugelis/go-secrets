@@ -38,7 +38,7 @@ func GetSecret(ctx *gin.Context) {
 
 	// Fetch secret
 	redisClient := utils.GetRedisClient()
-	encryptedValue, err := redisClient.Get(context.Background(), secretKeyPath).Result()
+	encryptedValue, err := redisClient.Get(context.Background(), secretPath).Result()
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "secret not found"})
 		return
