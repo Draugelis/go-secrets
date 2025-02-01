@@ -12,5 +12,6 @@ func SecretRoutes(router *gin.Engine) {
 	{
 		secretGroup.POST("/*key", controllers.StoreSecret)
 		secretGroup.GET("/*key", controllers.GetSecret)
+		secretGroup.DELETE("/*key", controllers.DeleteSecret)
 	}
 }
