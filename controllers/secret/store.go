@@ -23,12 +23,7 @@ func StoreSecret(ctx *gin.Context) {
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		ctx.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"error": "Secret key path is required",
-			},
-		)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Secret key path is required"})
 		return
 	}
 
@@ -38,13 +33,7 @@ func StoreSecret(ctx *gin.Context) {
 	token := parts[1]
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "failed to get token hmac",
-			},
-		)
-		ctx.Abort()
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
 		return
 	}
 
@@ -66,12 +55,7 @@ func StoreSecret(ctx *gin.Context) {
 	// Store secret in Redis using {HMAC}:secret:{key} pattern
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "Encryption failed",
-			},
-		)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
 		return
 	}
 

@@ -7,10 +7,5 @@ import (
 )
 
 func ValidateToken(ctx *gin.Context) {
-	ctx.JSON(
-		http.StatusOK,
-		gin.H{
-			"valid": true,
-		},
-	)
+	ctx.JSON(http.StatusOK, gin.H{"valid": true})
 }

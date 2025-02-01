@@ -20,10 +20,7 @@ func IssueToken(ctx *gin.Context) {
 	if ttlStr != "" {
 		parsedTTL, err := strconv.Atoi(ttlStr)
 		if err != nil || parsedTTL <= 0 || parsedTTL > MaxTTL {
-			ctx.JSON(
-				http.StatusBadRequest,
-				gin.H{"error": "Invalid TTL value"},
-			)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TTL value"})
 			return
 		}
 		ttl = parsedTTL
@@ -32,12 +29,7 @@ func IssueToken(ctx *gin.Context) {
 	token := utils.RandomToken()
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "failed to get token hmac",
-			},
-		)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
 		ctx.Abort()
 		return
 	}

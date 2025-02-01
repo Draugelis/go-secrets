@@ -19,12 +19,7 @@ func GetSecret(ctx *gin.Context) {
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		ctx.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"error": "secret key path is required",
-			},
-		)
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
 		return
 	}
 
@@ -34,12 +29,7 @@ func GetSecret(ctx *gin.Context) {
 	token := parts[1]
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "failed to get token hmac",
-			},
-		)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
 		ctx.Abort()
 		return
 	}
@@ -50,36 +40,21 @@ func GetSecret(ctx *gin.Context) {
 	redisClient := utils.GetRedisClient()
 	encryptedValue, err := redisClient.Get(context.Background(), secretKeyPath).Result()
 	if err != nil {
-		ctx.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"error": "secret not found",
-			},
-		)
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "secret not found"})
 		return
 	}
 
 	// Get TTL
 	ttl, err := redisClient.TTL(context.Background(), secretPath).Result()
 	if err != nil || ttl <= 0 {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "failed to get secret TTL",
-			},
-		)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get secret TTL"})
 		return
 	}
 
 	// Decrypt secret
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
-		ctx.JSON(
-			http.StatusInternalServerError,
-			gin.H{
-				"error": "failed to decrypt secret",
-			},
-		)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decrypt secret"})
 		return
 	}
 
