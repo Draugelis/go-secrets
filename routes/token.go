@@ -12,5 +12,6 @@ func TokenRoute(router *gin.Engine) {
 	{
 		tokenGroup.GET("", controllers.IssueToken)
 		tokenGroup.GET("/valid", middlewares.AuthMiddleware(), controllers.ValidateToken)
+		tokenGroup.DELETE("", middlewares.AuthMiddleware(), controllers.DeleteToken)
 	}
 }
