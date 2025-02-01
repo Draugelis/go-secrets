@@ -30,10 +30,20 @@ func IssueToken(ctx *gin.Context) {
 	}
 
 	token := utils.RandomToken()
-	tokenHMAC := utils.HMAC(token)
+	tokenHMAC, err := utils.HMAC(token)
+	if err != nil {
+		ctx.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": "failed to get token hmac",
+			},
+		)
+		ctx.Abort()
+		return
+	}
 
 	redisClient := utils.GetRedisClient()
-	err := redisClient.Set(context.Background(), tokenHMAC, "1", time.Duration(ttl)*time.Second).Err()
+	err = redisClient.Set(context.Background(), tokenHMAC, "1", time.Duration(ttl)*time.Second).Err()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store token"})
 		return
