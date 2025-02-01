@@ -23,10 +23,12 @@ func main() {
 	appPort := utils.GetEnv("APP_PORT", "8888")
 
 	// Initialize redis client
-	if _, err := utils.SetupRedis(redisUrl); err != nil {
-		slog.Error("failed to connect to Redis", slog.String("error", err.Error()))
+	redisClient, err := utils.SetupRedis(redisUrl)
+	if err != nil {
+		slog.Error("failed to connect to redis", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
+	defer redisClient.Close()
 
 	// Initialize server token
 	serverToken := utils.RandomToken()

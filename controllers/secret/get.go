@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"go-secrets/utils"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,7 @@ func GetSecret(ctx *gin.Context) {
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
+		slog.Warn("missing secret key path")
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
 		return
 	}
@@ -27,8 +29,8 @@ func GetSecret(ctx *gin.Context) {
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
-		ctx.Abort()
 		return
 	}
 	// Secret path
@@ -43,12 +45,14 @@ func GetSecret(ctx *gin.Context) {
 
 	_, err = pipe.Exec(context.Background())
 	if err != nil {
+		slog.Error("failed to execute redis pipeline", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to execute redis pipeline"})
 		return
 	}
 
 	encryptedValue, err := getCmd.Result()
 	if err != nil {
+		slog.Warn("secret not found", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "secret not found"})
 		return
 	}
@@ -56,6 +60,7 @@ func GetSecret(ctx *gin.Context) {
 	// Get TTL
 	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
+		slog.Error("failed to get secret TTL", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get secret TTL"})
 		return
 	}
@@ -63,6 +68,7 @@ func GetSecret(ctx *gin.Context) {
 	// Decrypt secret
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
+		slog.Error("failed to decrypt secret", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decrypt secret"})
 		return
 	}

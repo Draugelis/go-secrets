@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"go-secrets/utils"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -23,7 +24,8 @@ func StoreSecret(ctx *gin.Context) {
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Secret key path is required"})
+		slog.Warn("missing secret key path")
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
 		return
 	}
 
@@ -31,13 +33,15 @@ func StoreSecret(ctx *gin.Context) {
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
 		return
 	}
 
 	var req SecretRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		slog.Warn("invalid request format", slog.String("error", err.Error()))
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
 		return
 	}
 
@@ -46,21 +50,24 @@ func StoreSecret(ctx *gin.Context) {
 	// Get token TTL
 	ttl, err := redisClient.TTL(context.Background(), tokenHMAC).Result()
 	if err != nil || ttl <= 0 {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		slog.Warn("invalid or expired token", slog.String("error", err.Error()))
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 		return
 	}
 
 	// Store secret in Redis using {HMAC}:secret:{key} pattern
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Encryption failed"})
+		slog.Error("encryption failed", slog.String("error", err.Error()))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "encryption failed"})
 		return
 	}
 
 	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store secret"})
+		slog.Error("failed to store secret", slog.String("error", err.Error()))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store secret"})
 		return
 	}
 

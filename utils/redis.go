@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -36,7 +36,7 @@ func SetupRedis(address string) (*Redis, error) {
 
 		// Assign the singleton instance
 		instance = &Redis{Client: client}
-		log.Println("Redis connection established")
+		slog.Info("redis connection established")
 	})
 
 	return instance, err
@@ -44,16 +44,16 @@ func SetupRedis(address string) (*Redis, error) {
 
 func GetRedisClient() *redis.Client {
 	if instance == nil {
-		log.Fatal("Redis client is not initialized. Call SetupRedis first.")
+		slog.Error("redis client is not initialized, call SetupRedis first")
 	}
 	return instance.Client
 }
 
 func (r *Redis) Close() error {
 	if err := r.Client.Close(); err != nil {
-		log.Printf("Warning: Failed to close Redis connection: %v", err)
+		slog.Warn("failed to close redis connection", slog.String("error", err.Error()))
 		return err
 	}
-	log.Println("Redis connection closed")
+	slog.Info("redis connection closed")
 	return nil
 }

@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -13,7 +13,7 @@ func IsValidToken(tokenHMAC string) bool {
 	if err == redis.Nil {
 		return false
 	} else if err != nil {
-		log.Printf("Error checking token: %v", err)
+		slog.Error("error validating token", slog.String("error", err.Error()))
 		return false
 	}
 

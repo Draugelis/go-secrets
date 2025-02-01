@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-secrets/utils"
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ func DeleteToken(ctx *gin.Context) {
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
 		ctx.Abort()
 		return
@@ -31,6 +33,7 @@ func DeleteToken(ctx *gin.Context) {
 	}
 
 	if err := iter.Err(); err != nil {
+		slog.Error("failed to scan secrets", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan secrets"})
 		return
 	}
@@ -45,6 +48,7 @@ func DeleteToken(ctx *gin.Context) {
 		})
 
 		if err != nil {
+			slog.Error("failed to delete secrets", slog.String("error", err.Error()))
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete secrets"})
 			return
 		}

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"go-secrets/utils"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -20,7 +21,8 @@ func IssueToken(ctx *gin.Context) {
 	if ttlStr != "" {
 		parsedTTL, err := strconv.Atoi(ttlStr)
 		if err != nil || parsedTTL <= 0 || parsedTTL > MaxTTL {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid TTL value"})
+			slog.Error("invalid TTL value", slog.String("error", err.Error()))
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid TTL value"})
 			return
 		}
 		ttl = parsedTTL
@@ -29,15 +31,16 @@ func IssueToken(ctx *gin.Context) {
 	token := utils.RandomToken()
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
-		ctx.Abort()
 		return
 	}
 
 	redisClient := utils.GetRedisClient()
 	err = redisClient.Set(context.Background(), tokenHMAC, "1", time.Duration(ttl)*time.Second).Err()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store token"})
+		slog.Error("failed to store token", slog.String("error", err.Error()))
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store token"})
 		return
 	}
 
