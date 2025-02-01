@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"go-secrets/controllers"
+	controllers "go-secrets/controllers/token"
 	"go-secrets/middlewares"
 
 	"github.com/gin-gonic/gin"

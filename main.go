@@ -26,6 +26,7 @@ func main() {
 	// Initialize server
 	router := gin.Default()
 	routes.TokenRoute(router)
+	routes.SecretRoutes(router)
 
 	// Initialize server token
 	serverToken := utils.RandomToken()
