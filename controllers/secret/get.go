@@ -24,9 +24,7 @@ func GetSecret(ctx *gin.Context) {
 	}
 
 	// Generate token HMAC
-	authHeader := ctx.GetHeader("Authorization")
-	parts := strings.Split(authHeader, " ")
-	token := parts[1]
+	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
