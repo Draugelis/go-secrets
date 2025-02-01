@@ -34,16 +34,27 @@ func GetSecret(ctx *gin.Context) {
 	// Secret path
 	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
 
-	// Fetch secret
+	// Fetch values from redis
 	redisClient := utils.GetRedisClient()
-	encryptedValue, err := redisClient.Get(context.Background(), secretPath).Result()
+
+	pipe := redisClient.Pipeline()
+	getCmd := pipe.Get(context.Background(), secretPath)
+	ttlCmd := pipe.TTL(context.Background(), secretPath)
+
+	_, err = pipe.Exec(context.Background())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to execute redis pipeline"})
+		return
+	}
+
+	encryptedValue, err := getCmd.Result()
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "secret not found"})
 		return
 	}
 
 	// Get TTL
-	ttl, err := redisClient.TTL(context.Background(), secretPath).Result()
+	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get secret TTL"})
 		return
