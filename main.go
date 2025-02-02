@@ -37,6 +37,7 @@ func main() {
 	// Initialize server
 	router := gin.Default()
 	router.Use(middlewares.LoggingMiddleware())
+	router.Use(middlewares.RequestIDMiddleware())
 	routes.TokenRoute(router)
 	routes.SecretRoutes(router)
 
