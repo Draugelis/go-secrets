@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// SecretRoutes defines the routes for managing secrets under the `/secret` endpoint.
 func SecretRoutes(router *gin.Engine) {
 	secretGroup := router.Group("/secret").Use(middlewares.AuthMiddleware())
 	{

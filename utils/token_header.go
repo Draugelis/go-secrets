@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Get token from Authorization header
+// GetHeaderToken retrieves the token from the Authorization header in the request.
 func GetHeaderToken(ctx *gin.Context) string {
 	authHeader := ctx.GetHeader("Authorization")
 	parts := strings.Split(authHeader, " ")

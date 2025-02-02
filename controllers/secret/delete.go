@@ -10,10 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Delete secret
+// DeleteSecret handles the process of deleting a secret associated with a specified key path.
 func DeleteSecret(ctx *gin.Context) {
 	requestID := ctx.GetString("request_id")
-	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {

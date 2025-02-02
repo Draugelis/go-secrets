@@ -8,6 +8,7 @@ import (
 
 const DefaultByteLength = 32
 
+// RandomToken generates a random token of the specified byte length (defaulting to DefaultByteLength if not provided).
 func RandomToken(byteLength ...int) string {
 	length := DefaultByteLength
 	if len(byteLength) > 0 && byteLength[0] > 0 {

@@ -14,7 +14,7 @@ import (
 
 const NonceSize = 12
 
-// Derives an AES key from a user and server tokens
+// deriveKey generates a derived key by applying HMAC with SHA256 using the server token and the provided token.
 func deriveKey(token string) ([]byte, error) {
 	serverToken, err := config.GetServerToken()
 	if err != nil {
@@ -26,7 +26,8 @@ func deriveKey(token string) ([]byte, error) {
 	return h.Sum(nil)[:32], nil
 }
 
-// Encrypts a value using AES-GCM with a derived key
+// Encrypt encrypts the provided value using AES-GCM with a derived key from the given token.
+// The encrypted result is returned as a base64 encoded string.
 func Encrypt(value string, token string) (string, error) {
 	key, err := deriveKey(token)
 	if err != nil {
@@ -53,7 +54,7 @@ func Encrypt(value string, token string) (string, error) {
 	return base64.StdEncoding.EncodeToString(encrypted), nil
 }
 
-// Decrypts a value using AES-GCM with a derived key
+// Decrypt decrypts the provided base64 encoded encrypted string using AES-GCM with a derived key from the given token.
 func Decrypt(encrypted string, token string) (string, error) {
 	key, err := deriveKey(token)
 	if err != nil {

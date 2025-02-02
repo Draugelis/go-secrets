@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// GetSecret handles the process of retrieving a secret associated with a specified key path.
 func GetSecret(ctx *gin.Context) {
 	requestID := ctx.GetString("request_id")
-	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
@@ -22,7 +22,6 @@ func GetSecret(ctx *gin.Context) {
 		return
 	}
 
-	// Generate token HMAC
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
@@ -30,13 +29,9 @@ func GetSecret(ctx *gin.Context) {
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
-
-	// Secret path
 	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
 
-	// Fetch values from redis
 	redisClient := utils.GetRedisClient()
-
 	pipe := redisClient.Pipeline()
 	getCmd := pipe.Get(context.Background(), secretPath)
 	ttlCmd := pipe.TTL(context.Background(), secretPath)
@@ -55,7 +50,6 @@ func GetSecret(ctx *gin.Context) {
 		return
 	}
 
-	// Get TTL
 	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
 		utils.LogError(context.Background(), "failed to get secret TTL", requestID, err)
@@ -63,7 +57,6 @@ func GetSecret(ctx *gin.Context) {
 		return
 	}
 
-	// Decrypt secret
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
 		utils.LogError(context.Background(), "failed to decrypt secret", requestID, err)

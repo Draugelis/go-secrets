@@ -11,9 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// StoreSecret handles the process of storing a secret with a specified key path.
 func StoreSecret(ctx *gin.Context) {
 	requestID := ctx.GetString("request_id")
-	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
@@ -22,7 +22,6 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	// Generate token HMAC
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
@@ -40,7 +39,6 @@ func StoreSecret(ctx *gin.Context) {
 
 	redisClient := utils.GetRedisClient()
 
-	// Get token TTL
 	ttl, err := redisClient.TTL(context.Background(), tokenHMAC).Result()
 	if err != nil || ttl <= 0 {
 		utils.LogWarn(context.Background(), "invalid or expired token", requestID, err)
@@ -48,7 +46,6 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	// Store secret in Redis using {HMAC}:secret:{key} pattern
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
 		utils.LogError(context.Background(), "encryption failed", requestID, err)

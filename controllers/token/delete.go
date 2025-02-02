@@ -11,7 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Delete token and all secrets that belong to it
+// DeleteToken handles the deletion of all keys related to the current token in Redis.
 func DeleteToken(ctx *gin.Context) {
 	requestID := ctx.GetString("request_id")
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
@@ -22,7 +22,6 @@ func DeleteToken(ctx *gin.Context) {
 	}
 	keyPattern := fmt.Sprintf("%s*", tokenHMAC)
 
-	// Fetch all keys related to token
 	redisClient := utils.GetRedisClient()
 	iter := redisClient.Scan(context.Background(), 0, keyPattern, 100).Iterator()
 	var keysToDelete []string
@@ -37,7 +36,6 @@ func DeleteToken(ctx *gin.Context) {
 		return
 	}
 
-	// Delete keys
 	if len(keysToDelete) > 0 {
 		_, err := redisClient.Pipelined(context.Background(), func(p redis.Pipeliner) error {
 			for _, key := range keysToDelete {

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TokenRoute defines the routes for managing tokens under the `/token` endpoint.
 func TokenRoute(router *gin.Engine) {
 	tokenGroup := router.Group("/token")
 	{

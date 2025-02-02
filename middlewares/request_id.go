@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// RequestIDMiddleware generates or retrieves a request ID for each request and sets it in the context and response header.
 func RequestIDMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		requestID := ctx.GetHeader("X-Request-ID")

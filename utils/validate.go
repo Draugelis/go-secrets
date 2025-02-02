@@ -6,6 +6,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// IsValidToken checks if the given HMAC token is valid by verifying its presence and value in Redis.
 func IsValidToken(tokenHMAC string) bool {
 	redisClient := GetRedisClient()
 	val, err := redisClient.Get(context.Background(), tokenHMAC).Result()

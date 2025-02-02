@@ -7,7 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LoggingMiddleware logs details about incoming requests and their processing time.
 func LoggingMiddleware() gin.HandlerFunc {
+	// TODO: Log request_id
 	return func(ctx *gin.Context) {
 		startTime := time.Now()
 

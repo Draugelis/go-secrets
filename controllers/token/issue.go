@@ -15,6 +15,7 @@ import (
 const DefaultTTL = 900 // Default TTL of 15 minutes
 const MaxTTL = 3600    // Max TTL of 60 minutes
 
+// IssueToken handles the generation and storage of a new token with a specified TTL.
 func IssueToken(ctx *gin.Context) {
 	requestID := ctx.GetString("request_id")
 	ttlStr := ctx.Query("ttl")
