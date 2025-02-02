@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"go-secrets/errors"
+	"go-secrets/models"
 	"go-secrets/utils"
 	"log/slog"
 	"net/http"
@@ -22,7 +24,7 @@ func IssueToken(ctx *gin.Context) {
 		parsedTTL, err := strconv.Atoi(ttlStr)
 		if err != nil || parsedTTL <= 0 || parsedTTL > MaxTTL {
 			slog.Error("invalid TTL value", slog.String("error", err.Error()))
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid TTL value"})
+			errors.ErrInvalidRequest.JSON(ctx)
 			return
 		}
 		ttl = parsedTTL
@@ -38,9 +40,14 @@ func IssueToken(ctx *gin.Context) {
 	err = redisClient.Set(context.Background(), tokenHMAC, "1", time.Duration(ttl)*time.Second).Err()
 	if err != nil {
 		slog.Error("failed to store token", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store token"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"token": token, "ttl": ttl})
+	response := models.IssueTokenResponse{
+		Token: token,
+		TTL:   ttl,
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

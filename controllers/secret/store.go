@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"go-secrets/errors"
+	"go-secrets/models"
 	"go-secrets/utils"
 	"log/slog"
 	"net/http"
@@ -10,22 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SecretRequest struct {
-	Value string `json:"value" binding:"required"`
-}
-
-type StoreResponse struct {
-	Key string `json:"key"`
-	TTL int    `json:"ttl"`
-}
-
 func StoreSecret(ctx *gin.Context) {
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
+		errors.ErrAPIMissingPath.JSON(ctx)
 		return
 	}
 
@@ -36,10 +29,10 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	var req SecretRequest
+	var req models.StoreSecretRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		slog.Warn("invalid request format", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+		errors.ErrInvalidRequest.JSON(ctx)
 		return
 	}
 
@@ -49,7 +42,7 @@ func StoreSecret(ctx *gin.Context) {
 	ttl, err := redisClient.TTL(context.Background(), tokenHMAC).Result()
 	if err != nil || ttl <= 0 {
 		slog.Warn("invalid or expired token", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
+		errors.ErrUnauthorized.JSON(ctx)
 		return
 	}
 
@@ -57,7 +50,7 @@ func StoreSecret(ctx *gin.Context) {
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
 		slog.Error("encryption failed", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "encryption failed"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
@@ -65,11 +58,11 @@ func StoreSecret(ctx *gin.Context) {
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
 		slog.Error("failed to store secret", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to store secret"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
-	response := StoreResponse{
+	response := models.StoreSecretResponse{
 		Key: secretKeyPath,
 		TTL: int(ttl.Seconds()),
 	}

@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"go-secrets/errors"
+	"go-secrets/models"
 	"go-secrets/utils"
 	"log/slog"
 	"net/http"
@@ -10,18 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type SecretResponse struct {
-	Value string `json:"value"`
-	TTL   int    `json:"ttl"`
-}
-
 func GetSecret(ctx *gin.Context) {
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
+		errors.ErrAPIMissingPath.JSON(ctx)
 		return
 	}
 
@@ -45,14 +42,14 @@ func GetSecret(ctx *gin.Context) {
 	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		slog.Error("failed to execute redis pipeline", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to execute redis pipeline"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
 	encryptedValue, err := getCmd.Result()
 	if err != nil {
 		slog.Warn("secret not found", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "secret not found"})
+		errors.ErrNotFound.JSON(ctx)
 		return
 	}
 
@@ -60,7 +57,7 @@ func GetSecret(ctx *gin.Context) {
 	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
 		slog.Error("failed to get secret TTL", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get secret TTL"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
@@ -68,11 +65,11 @@ func GetSecret(ctx *gin.Context) {
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
 		slog.Error("failed to decrypt secret", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to decrypt secret"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
-	response := SecretResponse{
+	response := models.GetSecretResponse{
 		Value: decryptedValue,
 		TTL:   int(ttl.Seconds()),
 	}

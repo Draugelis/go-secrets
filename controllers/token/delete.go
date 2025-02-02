@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"go-secrets/errors"
 	"go-secrets/utils"
 	"log/slog"
 	"net/http"
@@ -30,7 +31,7 @@ func DeleteToken(ctx *gin.Context) {
 
 	if err := iter.Err(); err != nil {
 		slog.Error("failed to scan secrets", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan secrets"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
@@ -45,7 +46,7 @@ func DeleteToken(ctx *gin.Context) {
 
 		if err != nil {
 			slog.Error("failed to delete secrets", slog.String("error", err.Error()))
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete secrets"})
+			errors.ErrInternalServer.JSON(ctx)
 			return
 		}
 	}

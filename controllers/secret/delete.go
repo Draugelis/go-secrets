@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"go-secrets/errors"
 	"go-secrets/utils"
 	"log/slog"
 	"net/http"
@@ -17,7 +18,7 @@ func DeleteSecret(ctx *gin.Context) {
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "secret key path is required"})
+		errors.ErrAPIMissingPath.JSON(ctx)
 		return
 	}
 
@@ -31,7 +32,7 @@ func DeleteSecret(ctx *gin.Context) {
 	redisClient := utils.GetRedisClient()
 	if err := redisClient.Del(context.Background(), secretKey).Err(); err != nil {
 		slog.Error("failed to delete secret", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete secret"})
+		errors.ErrInternalServer.JSON(ctx)
 		return
 	}
 
