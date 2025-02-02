@@ -8,13 +8,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisClient defines an interface for Redis operations
-type RedisClient interface {
-	CreateUser(token string) error
-	CleanupUser() error
-	Close() error
-}
-
 // Redis represents a struct that holds the Redis client for performing Redis operations.
 type Redis struct {
 	Client *redis.Client
