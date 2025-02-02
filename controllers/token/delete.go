@@ -13,12 +13,8 @@ import (
 
 // Delete token and all secrets that belong to it
 func DeleteToken(ctx *gin.Context) {
-	token := utils.GetHeaderToken(ctx)
-	tokenHMAC, err := utils.HMAC(token)
+	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
-		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get token hmac"})
-		ctx.Abort()
 		return
 	}
 	keyPattern := fmt.Sprintf("%s*", tokenHMAC)
