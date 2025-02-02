@@ -16,6 +16,8 @@ import (
 func DeleteToken(ctx *gin.Context) {
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 	keyPattern := fmt.Sprintf("%s*", tokenHMAC)
