@@ -31,8 +31,9 @@ func IssueToken(ctx *gin.Context) {
 	}
 
 	token := utils.RandomToken()
-	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
+	tokenHMAC, err := utils.HMAC(token)
 	if err != nil {
+		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
 		return
 	}
 
