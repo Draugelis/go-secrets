@@ -7,6 +7,7 @@ import (
 type ErrorResponse struct {
 	StatusCode int    `json:"status"`
 	Message    string `json:"message"`
+	RequestID  string `json:"request_id,omitempty"`
 }
 
 func NewErrorResponse(status int, message string) ErrorResponse {
@@ -18,4 +19,12 @@ func NewErrorResponse(status int, message string) ErrorResponse {
 
 func (e ErrorResponse) JSON(ctx *gin.Context) {
 	ctx.JSON(e.StatusCode, e)
+}
+
+func (e ErrorResponse) WithRequestID(ctx *gin.Context) ErrorResponse {
+	requestID, _ := ctx.Get("request_id")
+	if id, ok := requestID.(string); ok {
+		e.RequestID = id
+	}
+	return e
 }

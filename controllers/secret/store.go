@@ -18,7 +18,7 @@ func StoreSecret(ctx *gin.Context) {
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		errors.ErrAPIMissingPath.JSON(ctx)
+		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -32,7 +32,7 @@ func StoreSecret(ctx *gin.Context) {
 	var req models.StoreSecretRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		slog.Warn("invalid request format", slog.String("error", err.Error()))
-		errors.ErrInvalidRequest.JSON(ctx)
+		errors.ErrInvalidRequest.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -42,7 +42,7 @@ func StoreSecret(ctx *gin.Context) {
 	ttl, err := redisClient.TTL(context.Background(), tokenHMAC).Result()
 	if err != nil || ttl <= 0 {
 		slog.Warn("invalid or expired token", slog.String("error", err.Error()))
-		errors.ErrUnauthorized.JSON(ctx)
+		errors.ErrUnauthorized.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -50,7 +50,7 @@ func StoreSecret(ctx *gin.Context) {
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
 		slog.Error("encryption failed", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -58,7 +58,7 @@ func StoreSecret(ctx *gin.Context) {
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
 		slog.Error("failed to store secret", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 

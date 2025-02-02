@@ -12,7 +12,7 @@ func AuthTokenHMAC(ctx *gin.Context) (string, error) {
 	hmac, err := HMAC(token)
 	if err != nil {
 		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return "", err
 	}
 

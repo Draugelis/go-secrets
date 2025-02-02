@@ -31,7 +31,7 @@ func DeleteToken(ctx *gin.Context) {
 
 	if err := iter.Err(); err != nil {
 		slog.Error("failed to scan secrets", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -46,7 +46,7 @@ func DeleteToken(ctx *gin.Context) {
 
 		if err != nil {
 			slog.Error("failed to delete secrets", slog.String("error", err.Error()))
-			errors.ErrInternalServer.JSON(ctx)
+			errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 			return
 		}
 	}

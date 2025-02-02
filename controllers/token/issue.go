@@ -24,7 +24,7 @@ func IssueToken(ctx *gin.Context) {
 		parsedTTL, err := strconv.Atoi(ttlStr)
 		if err != nil || parsedTTL <= 0 || parsedTTL > MaxTTL {
 			slog.Error("invalid TTL value", slog.String("error", err.Error()))
-			errors.ErrInvalidRequest.JSON(ctx)
+			errors.ErrInvalidRequest.WithRequestID(ctx).JSON(ctx)
 			return
 		}
 		ttl = parsedTTL
@@ -41,7 +41,7 @@ func IssueToken(ctx *gin.Context) {
 	err = redisClient.Set(context.Background(), tokenHMAC, "1", time.Duration(ttl)*time.Second).Err()
 	if err != nil {
 		slog.Error("failed to store token", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 

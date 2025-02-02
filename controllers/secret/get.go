@@ -18,7 +18,7 @@ func GetSecret(ctx *gin.Context) {
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		errors.ErrAPIMissingPath.JSON(ctx)
+		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -42,14 +42,14 @@ func GetSecret(ctx *gin.Context) {
 	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		slog.Error("failed to execute redis pipeline", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
 	encryptedValue, err := getCmd.Result()
 	if err != nil {
 		slog.Warn("secret not found", slog.String("error", err.Error()))
-		errors.ErrNotFound.JSON(ctx)
+		errors.ErrNotFound.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -57,7 +57,7 @@ func GetSecret(ctx *gin.Context) {
 	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
 		slog.Error("failed to get secret TTL", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -65,7 +65,7 @@ func GetSecret(ctx *gin.Context) {
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
 		slog.Error("failed to decrypt secret", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 

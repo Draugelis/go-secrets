@@ -18,7 +18,7 @@ func DeleteSecret(ctx *gin.Context) {
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
 		slog.Warn("missing secret key path")
-		errors.ErrAPIMissingPath.JSON(ctx)
+		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
@@ -32,7 +32,7 @@ func DeleteSecret(ctx *gin.Context) {
 	redisClient := utils.GetRedisClient()
 	if err := redisClient.Del(context.Background(), secretKey).Err(); err != nil {
 		slog.Error("failed to delete secret", slog.String("error", err.Error()))
-		errors.ErrInternalServer.JSON(ctx)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
