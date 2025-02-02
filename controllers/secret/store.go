@@ -5,7 +5,6 @@ import (
 	"go-secrets/errors"
 	"go-secrets/models"
 	"go-secrets/utils"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -13,11 +12,12 @@ import (
 )
 
 func StoreSecret(ctx *gin.Context) {
+	requestID := ctx.GetString("request_id")
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		slog.Warn("missing secret key path")
+		utils.LogWarn(context.Background(), "missing secret key path", requestID, nil)
 		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -26,14 +26,14 @@ func StoreSecret(ctx *gin.Context) {
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
-		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to get token hmac", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
 	var req models.StoreSecretRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		slog.Warn("invalid request format", slog.String("error", err.Error()))
+		utils.LogWarn(context.Background(), "invalid request format", requestID, err)
 		errors.ErrInvalidRequest.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -43,7 +43,7 @@ func StoreSecret(ctx *gin.Context) {
 	// Get token TTL
 	ttl, err := redisClient.TTL(context.Background(), tokenHMAC).Result()
 	if err != nil || ttl <= 0 {
-		slog.Warn("invalid or expired token", slog.String("error", err.Error()))
+		utils.LogWarn(context.Background(), "invalid or expired token", requestID, err)
 		errors.ErrUnauthorized.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -51,7 +51,7 @@ func StoreSecret(ctx *gin.Context) {
 	// Store secret in Redis using {HMAC}:secret:{key} pattern
 	encryptedValue, err := utils.Encrypt(req.Value, token)
 	if err != nil {
-		slog.Error("encryption failed", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "encryption failed", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -59,7 +59,7 @@ func StoreSecret(ctx *gin.Context) {
 	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
-		slog.Error("failed to store secret", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to store secret", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}

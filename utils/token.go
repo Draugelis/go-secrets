@@ -1,9 +1,9 @@
 package utils
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"log/slog"
 )
 
 const DefaultByteLength = 32
@@ -17,7 +17,7 @@ func RandomToken(byteLength ...int) string {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
-		slog.Error("failed to generate a random token", slog.String("error", err.Error()))
+		LogError(context.Background(), "failed to generate a random token", "", err)
 	}
 	return hex.EncodeToString(bytes)
 }

@@ -44,14 +44,14 @@ func SetupRedis(address string) (*Redis, error) {
 
 func GetRedisClient() *redis.Client {
 	if instance == nil {
-		slog.Error("redis client is not initialized, call SetupRedis first")
+		LogError(context.Background(), "redis client is not initialized, call SetupRedis first", "", nil)
 	}
 	return instance.Client
 }
 
 func (r *Redis) Close() error {
 	if err := r.Client.Close(); err != nil {
-		slog.Warn("failed to close redis connection", slog.String("error", err.Error()))
+		LogWarn(context.Background(), "failed to close redis connection", "", err)
 		return err
 	}
 	slog.Info("redis connection closed")

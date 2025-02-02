@@ -5,7 +5,6 @@ import (
 	"go-secrets/errors"
 	"go-secrets/models"
 	"go-secrets/utils"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -13,11 +12,12 @@ import (
 )
 
 func GetSecret(ctx *gin.Context) {
+	requestID := ctx.GetString("request_id")
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		slog.Warn("missing secret key path")
+		utils.LogWarn(context.Background(), "missing secret key path", requestID, nil)
 		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -26,7 +26,7 @@ func GetSecret(ctx *gin.Context) {
 	token := utils.GetHeaderToken(ctx)
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
-		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to get token hmac", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -43,14 +43,14 @@ func GetSecret(ctx *gin.Context) {
 
 	_, err = pipe.Exec(context.Background())
 	if err != nil {
-		slog.Error("failed to execute redis pipeline", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to execute redis pipeline", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
 	encryptedValue, err := getCmd.Result()
 	if err != nil {
-		slog.Warn("secret not found", slog.String("error", err.Error()))
+		utils.LogWarn(context.Background(), "secret not found", requestID, err)
 		errors.ErrNotFound.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -58,7 +58,7 @@ func GetSecret(ctx *gin.Context) {
 	// Get TTL
 	ttl, err := ttlCmd.Result()
 	if err != nil || ttl <= 0 {
-		slog.Error("failed to get secret TTL", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to get secret TTL", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -66,7 +66,7 @@ func GetSecret(ctx *gin.Context) {
 	// Decrypt secret
 	decryptedValue, err := utils.Decrypt(encryptedValue, token)
 	if err != nil {
-		slog.Error("failed to decrypt secret", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to decrypt secret", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}

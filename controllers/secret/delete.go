@@ -4,7 +4,6 @@ import (
 	"context"
 	"go-secrets/errors"
 	"go-secrets/utils"
-	"log/slog"
 	"net/http"
 	"strings"
 
@@ -13,18 +12,19 @@ import (
 
 // Delete secret
 func DeleteSecret(ctx *gin.Context) {
+	requestID := ctx.GetString("request_id")
 	// Parse the secret key path
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		slog.Warn("missing secret key path")
+		utils.LogWarn(context.Background(), "missing secret key path", requestID, nil)
 		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
 	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
 	if err != nil {
-		slog.Error("failed to get token hmac", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to get token hmac", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
@@ -33,7 +33,7 @@ func DeleteSecret(ctx *gin.Context) {
 
 	redisClient := utils.GetRedisClient()
 	if err := redisClient.Del(context.Background(), secretKey).Err(); err != nil {
-		slog.Error("failed to delete secret", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to delete secret", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"go-secrets/config"
 	"go-secrets/middlewares"
@@ -25,7 +26,7 @@ func main() {
 	// Initialize redis client
 	redisClient, err := utils.SetupRedis(redisUrl)
 	if err != nil {
-		slog.Error("failed to connect to redis", slog.String("error", err.Error()))
+		utils.LogError(context.Background(), "failed to connect to redis", "", err)
 		os.Exit(1)
 	}
 	defer redisClient.Close()
