@@ -28,7 +28,12 @@ func DeleteSecret(ctx *gin.Context) {
 		return
 	}
 
-	secretKey := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	secretKey, err := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	if err != nil {
+		utils.LogError(context.Background(), "failed to generate secret key", requestID, err)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
+		return
+	}
 
 	redisClient := utils.GetRedisClient()
 	if err := redisClient.Del(context.Background(), secretKey).Err(); err != nil {

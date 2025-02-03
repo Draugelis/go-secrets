@@ -53,7 +53,13 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	secretPath, err := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	if err != nil {
+		utils.LogError(context.Background(), "failed to generate secret key", requestID, err)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
+		return
+	}
+
 	err = redisClient.Set(context.Background(), secretPath, encryptedValue, ttl).Err()
 	if err != nil {
 		utils.LogError(context.Background(), "failed to store secret", requestID, err)

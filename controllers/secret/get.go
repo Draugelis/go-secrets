@@ -29,7 +29,13 @@ func GetSecret(ctx *gin.Context) {
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
-	secretPath := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+
+	secretPath, err := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	if err != nil {
+		utils.LogError(context.Background(), "failed to generate secret key", requestID, err)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
+		return
+	}
 
 	redisClient := utils.GetRedisClient()
 	pipe := redisClient.Pipeline()
