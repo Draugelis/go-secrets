@@ -12,7 +12,7 @@ import (
 )
 
 // StoreSecret handles the process of storing a secret with a specified key path.
-func StoreSecret(ctx *gin.Context) {
+func StoreSecret(ctx *gin.Context, crypto utils.EncrypterDecrypter) {
 	requestID := ctx.GetString("request_id")
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
@@ -46,7 +46,7 @@ func StoreSecret(ctx *gin.Context) {
 		return
 	}
 
-	encryptedValue, err := utils.Encrypt(req.Value, token)
+	encryptedValue, err := crypto.Encrypt(req.Value, token)
 	if err != nil {
 		utils.LogError(context.Background(), "encryption failed", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)

@@ -14,8 +14,22 @@ import (
 
 const NonceSize = 12
 
+// EncrypterDecrypter defines the methods for encrypting and decrypting data.
+type EncrypterDecrypter interface {
+	// Encrypt encrypts the provided plaintext string using a token for key derivation.
+	// It returns the encrypted data as a base64 encoded string, or an error if the encryption fails.
+	Encrypt(plaintext string, token string) (string, error)
+
+	// Decrypt decrypts the provided encrypted base64 string using a token for key derivation.
+	// It returns the decrypted plaintext string, or an error if the decryption fails.
+	Decrypt(encrypted string, token string) (string, error)
+}
+
+// AesGcmCrypto implements the EncrypterDecrypter interface using AES-GCM encryption.
+type AesGcmCrypto struct{}
+
 // deriveKey generates a derived key by applying HMAC with SHA256 using the server token and the provided token.
-func deriveKey(token string) ([]byte, error) {
+func (e *AesGcmCrypto) deriveKey(token string) ([]byte, error) {
 	serverToken, err := config.GetServerToken()
 	if err != nil {
 		return nil, err
@@ -28,8 +42,8 @@ func deriveKey(token string) ([]byte, error) {
 
 // Encrypt encrypts the provided value using AES-GCM with a derived key from the given token.
 // The encrypted result is returned as a base64 encoded string.
-func Encrypt(value string, token string) (string, error) {
-	key, err := deriveKey(token)
+func (e *AesGcmCrypto) Encrypt(value string, token string) (string, error) {
+	key, err := e.deriveKey(token)
 	if err != nil {
 		return "", err
 	}
@@ -55,8 +69,8 @@ func Encrypt(value string, token string) (string, error) {
 }
 
 // Decrypt decrypts the provided base64 encoded encrypted string using AES-GCM with a derived key from the given token.
-func Decrypt(encrypted string, token string) (string, error) {
-	key, err := deriveKey(token)
+func (e *AesGcmCrypto) Decrypt(encrypted string, token string) (string, error) {
+	key, err := e.deriveKey(token)
 	if err != nil {
 		return "", err
 	}

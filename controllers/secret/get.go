@@ -12,7 +12,7 @@ import (
 )
 
 // GetSecret handles the process of retrieving a secret associated with a specified key path.
-func GetSecret(ctx *gin.Context) {
+func GetSecret(ctx *gin.Context, crypto utils.EncrypterDecrypter) {
 	requestID := ctx.GetString("request_id")
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
@@ -63,7 +63,7 @@ func GetSecret(ctx *gin.Context) {
 		return
 	}
 
-	decryptedValue, err := utils.Decrypt(encryptedValue, token)
+	decryptedValue, err := crypto.Decrypt(encryptedValue, token)
 	if err != nil {
 		utils.LogError(context.Background(), "failed to decrypt secret", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
