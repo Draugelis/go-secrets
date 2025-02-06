@@ -12,7 +12,7 @@ import (
 )
 
 // StoreSecret handles the process of storing a secret with a specified key path.
-func StoreSecret(ctx *gin.Context, crypto utils.EncrypterDecrypter) {
+func StoreSecret(ctx *gin.Context, crypto utils.CryptoService) {
 	requestID := ctx.GetString("request_id")
 	fullPath := ctx.Param("key")
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")

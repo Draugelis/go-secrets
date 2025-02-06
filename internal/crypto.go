@@ -1,4 +1,4 @@
-package utils
+package internal
 
 import (
 	"crypto/aes"
@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"go-secrets/config"
 	"io"
@@ -14,22 +15,18 @@ import (
 
 const NonceSize = 12
 
-// EncrypterDecrypter defines the methods for encrypting and decrypting data.
-type EncrypterDecrypter interface {
-	// Encrypt encrypts the provided plaintext string using a token for key derivation.
-	// It returns the encrypted data as a base64 encoded string, or an error if the encryption fails.
+// CryptoService defines the methods for encrypting and decrypting data.
+type CryptoService interface {
 	Encrypt(plaintext string, token string) (string, error)
-
-	// Decrypt decrypts the provided encrypted base64 string using a token for key derivation.
-	// It returns the decrypted plaintext string, or an error if the decryption fails.
 	Decrypt(encrypted string, token string) (string, error)
+	GenerateHMAC(data string) (string, error)
+	ValidateHMAC(data string, hmac string) bool
 }
 
-// AesGcmCrypto implements the EncrypterDecrypter interface using AES-GCM encryption.
-type AesGcmCrypto struct{}
+type CryptoServiceImpl struct{}
 
 // deriveKey generates a derived key by applying HMAC with SHA256 using the server token and the provided token.
-func (e *AesGcmCrypto) deriveKey(token string) ([]byte, error) {
+func (c *CryptoServiceImpl) deriveKey(token string) ([]byte, error) {
 	serverToken, err := config.GetServerToken()
 	if err != nil {
 		return nil, err
@@ -42,8 +39,8 @@ func (e *AesGcmCrypto) deriveKey(token string) ([]byte, error) {
 
 // Encrypt encrypts the provided value using AES-GCM with a derived key from the given token.
 // The encrypted result is returned as a base64 encoded string.
-func (e *AesGcmCrypto) Encrypt(value string, token string) (string, error) {
-	key, err := e.deriveKey(token)
+func (c *CryptoServiceImpl) Encrypt(value string, token string) (string, error) {
+	key, err := c.deriveKey(token)
 	if err != nil {
 		return "", err
 	}
@@ -69,8 +66,8 @@ func (e *AesGcmCrypto) Encrypt(value string, token string) (string, error) {
 }
 
 // Decrypt decrypts the provided base64 encoded encrypted string using AES-GCM with a derived key from the given token.
-func (e *AesGcmCrypto) Decrypt(encrypted string, token string) (string, error) {
-	key, err := e.deriveKey(token)
+func (c *CryptoServiceImpl) Decrypt(encrypted string, token string) (string, error) {
+	key, err := c.deriveKey(token)
 	if err != nil {
 		return "", err
 	}
@@ -103,4 +100,20 @@ func (e *AesGcmCrypto) Decrypt(encrypted string, token string) (string, error) {
 	}
 
 	return string(plaintext), nil
+}
+
+func (c *CryptoServiceImpl) GenerateHMAC(data string) (string, error) {
+	serverToken, err := config.GetServerToken()
+	if err != nil {
+		return "", err
+	}
+
+	h := hmac.New(sha256.New, []byte(serverToken))
+	h.Write([]byte(data))
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func (c *CryptoServiceImpl) ValidateHMAC(data string, receivedHMAC string) bool {
+	expectedHMAC, _ := c.GenerateHMAC(data)
+	return hmac.Equal([]byte(expectedHMAC), []byte(receivedHMAC))
 }
