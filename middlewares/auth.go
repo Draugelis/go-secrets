@@ -2,14 +2,20 @@ package middlewares
 
 import (
 	"go-secrets/errors"
-	"go-secrets/utils"
+	"go-secrets/internal"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
+type AuthMiddlewareImpl struct {
+	Crypto internal.CryptoService
+	Token  internal.TokenService
+	Redis  internal.RedisService
+}
+
 // AuthMiddleware handles the authorization of incoming requests by validating the Authorization header.
-func AuthMiddleware() gin.HandlerFunc {
+func (a *AuthMiddlewareImpl) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
 		if authHeader == "" {
@@ -26,14 +32,15 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token := parts[1]
-		tokenHMAC, err := utils.HMAC(token)
+		tokenHMAC, err := a.Crypto.GenerateHMAC(token)
 		if err != nil {
 			errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 			ctx.Abort()
 			return
 		}
 
-		if !utils.IsValidToken(tokenHMAC) {
+		valid, err := a.Token.ValidateToken(tokenHMAC, a.Redis)
+		if !valid || err != nil {
 			errors.ErrUnauthorized.WithRequestID(ctx).JSON(ctx)
 			ctx.Abort()
 			return

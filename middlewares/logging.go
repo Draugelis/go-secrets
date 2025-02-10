@@ -17,6 +17,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 			slog.String("method", ctx.Request.Method),
 			slog.String("path", ctx.Request.URL.Path),
 			slog.String("remote_ip", ctx.ClientIP()),
+			slog.String("request_id", ctx.GetHeader("X-Request-ID")),
 		)
 
 		ctx.Next()
@@ -28,6 +29,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 			slog.String("method", ctx.Request.Method),
 			slog.String("path", ctx.Request.URL.Path),
 			slog.String("remote_ip", ctx.ClientIP()),
+			slog.String("request_id", ctx.GetHeader("X-Request-ID")),
 		)
 	}
 }

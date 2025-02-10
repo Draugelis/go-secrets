@@ -1,10 +1,9 @@
 package controllers
 
 import (
-	"context"
 	"go-secrets/errors"
+	"go-secrets/helpers"
 	"go-secrets/models"
-	"go-secrets/utils"
 	"net/http"
 	"strings"
 
@@ -12,60 +11,56 @@ import (
 )
 
 // GetSecret handles the process of retrieving a secret associated with a specified key path.
-func GetSecret(ctx *gin.Context, crypto utils.EncrypterDecrypter) {
+func (sc *SecretsControllerImpl) Get(ctx *gin.Context) {
+	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")
 	fullPath := ctx.Param("key")
+
 	secretKeyPath := strings.TrimPrefix(fullPath, "/")
 	if secretKeyPath == "" {
-		utils.LogWarn(context.Background(), "missing secret key path", requestID, nil)
+		sc.Logger.LogWarn(requestCtx, "missing secret key path", requestID, nil)
 		errors.ErrAPIMissingPath.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	token := utils.GetHeaderToken(ctx)
-	tokenHMAC, err := utils.AuthTokenHMAC(ctx)
+	token, err := sc.Token.GetHeaderToken(ctx)
 	if err != nil {
-		utils.LogError(context.Background(), "failed to get token hmac", requestID, err)
+		sc.Logger.LogError(requestCtx, "failed to get token from header", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	secretPath, err := utils.FormatSecretPath(tokenHMAC, secretKeyPath)
+	tokenHMAC, err := sc.Token.AuthTokenHMAC(ctx)
 	if err != nil {
-		utils.LogError(context.Background(), "failed to generate secret key", requestID, err)
+		sc.Logger.LogError(requestCtx, "failed to get token hmac", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	redisClient := utils.GetRedisClient()
-	pipe := redisClient.Pipeline()
-	getCmd := pipe.Get(context.Background(), secretPath)
-	ttlCmd := pipe.TTL(context.Background(), secretPath)
-
-	_, err = pipe.Exec(context.Background())
+	secretPath, err := helpers.FormatSecretPath(tokenHMAC, secretKeyPath)
 	if err != nil {
-		utils.LogError(context.Background(), "failed to execute redis pipeline", requestID, err)
+		sc.Logger.LogError(requestCtx, "failed to format secret path", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	encryptedValue, err := getCmd.Result()
+	encryptedValue, err := sc.Redis.Get(requestCtx, secretPath)
 	if err != nil {
-		utils.LogWarn(context.Background(), "secret not found", requestID, err)
-		errors.ErrNotFound.WithRequestID(ctx).JSON(ctx)
+		sc.Logger.LogError(requestCtx, "failed to get secret", requestID, err)
+		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	ttl, err := ttlCmd.Result()
+	ttl, err := sc.Redis.TTL(requestCtx, secretPath)
 	if err != nil || ttl <= 0 {
-		utils.LogError(context.Background(), "failed to get secret TTL", requestID, err)
+		sc.Logger.LogError(requestCtx, "failed to get secret TTL", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}
 
-	decryptedValue, err := crypto.Decrypt(encryptedValue, token)
+	decryptedValue, err := sc.Crypto.Decrypt(encryptedValue, token)
 	if err != nil {
-		utils.LogError(context.Background(), "failed to decrypt secret", requestID, err)
+		sc.Logger.LogError(requestCtx, "failed to decrypt secret", requestID, err)
 		errors.ErrInternalServer.WithRequestID(ctx).JSON(ctx)
 		return
 	}

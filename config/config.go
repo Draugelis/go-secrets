@@ -5,6 +5,11 @@ import (
 	"sync"
 )
 
+type ConfigService interface {
+	SetServerToken(token string)
+	GetServerToken() (string, error)
+}
+
 // Config holds the configuration data for the application, including the server token.
 type Config struct {
 	ServerToken string

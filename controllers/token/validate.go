@@ -7,6 +7,6 @@ import (
 )
 
 // ValidateToken handles the validation of a token and responds with its validity status.
-func ValidateToken(ctx *gin.Context) {
+func (tc *TokenControllerImpl) Validate(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"valid": true})
 }
