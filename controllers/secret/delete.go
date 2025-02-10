@@ -9,7 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DeleteSecret handles the process of deleting a secret associated with a specified key path.
+// @Summary Delete a secret
+// @Description Deletes a secret by key path
+// @Tags secret
+// @Param key path string true "Secret key"
+// @Security BearerAuth
+// @Success 204 "No Content"
+// @Failure 400 {object} models.ErrorResponse "Missing key path"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /secret/{key} [delete]
 func (sc *SecretsControllerImpl) Delete(ctx *gin.Context) {
 	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")

@@ -10,7 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetSecret handles the process of retrieving a secret associated with a specified key path.
+// @Summary Retrieve a secret
+// @Description Gets a secret by key path
+// @Tags secret
+// @Param key path string true "Secret key"
+// @Security BearerAuth
+// @Success 200 {object} models.GetSecretResponse "Secret retrieved"
+// @Failure 400 {object} models.ErrorResponse "Missing key path"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /secret/{key} [get]
 func (sc *SecretsControllerImpl) Get(ctx *gin.Context) {
 	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")

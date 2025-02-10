@@ -5,6 +5,8 @@ import (
 )
 
 // ErrorResponse represents a standard error response structure with status, message, and an optional request ID.
+// @Description API error response format
+// @Example { "status": 400, "message": "invalid request", "request_id": "abc-123" }
 type ErrorResponse struct {
 	StatusCode int    `json:"status"`
 	Message    string `json:"message"`

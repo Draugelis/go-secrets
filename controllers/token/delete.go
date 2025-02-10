@@ -8,7 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// DeleteToken handles the deletion of all keys related to the current token in Redis.
+// @Summary Delete all secrets for a token
+// @Description Deletes all stored secrets for the authenticated token
+// @Tags token
+// @Security BearerAuth
+// @Success 204 "No Content"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /token [delete]
 func (tc *TokenControllerImpl) Delete(ctx *gin.Context) {
 	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")

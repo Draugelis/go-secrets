@@ -1,12 +1,23 @@
 package controllers
 
 import (
+	"go-secrets/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-// ValidateToken handles the validation of a token and responds with its validity status.
+// @Summary Validate a token
+// @Description Validates if a token is still active
+// @Tags token
+// @Security BearerAuth
+// @Success 200 {object} models.TokenValidationResponse "Token is valid"
+// @Failure 401 {object} models.ErrorResponse "Invalid or expired token"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /token/valid [get]
 func (tc *TokenControllerImpl) Validate(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{"valid": true})
+	response := models.TokenValidationResponse{
+		Valid: true,
+	}
+	ctx.JSON(http.StatusOK, response)
 }

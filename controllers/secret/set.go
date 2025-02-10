@@ -10,7 +10,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// StoreSecret handles the process of storing a secret with a specified key path.
+// @Summary Store a secret
+// @Description Stores a secret with a key path
+// @Tags secret
+// @Accept json
+// @Produce json
+// @Param key path string true "Secret key"
+// @Param body body models.StoreSecretRequest true "Secret data"
+// @Security BearerAuth
+// @Success 200 {object} models.StoreSecretResponse "Secret stored"
+// @Failure 400 {object} models.ErrorResponse "Invalid request"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /secret/{key} [post]
 func (sc *SecretsControllerImpl) Set(ctx *gin.Context) {
 	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")

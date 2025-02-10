@@ -1,3 +1,13 @@
+// @title        Go Secrets API
+// @version      0.1
+// @description  A simple API for managing secrets using Redis.
+// @host         localhost:8888
+// @BasePath     /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer {your_token}" into the field below
 package main
 
 import (
@@ -13,6 +23,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+
+	_ "go-secrets/docs"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func main() {
@@ -53,12 +68,15 @@ func main() {
 
 	// Set up router and middleware
 	router := gin.Default()
-	router.Use(middlewares.LoggingMiddleware())
 	router.Use(middlewares.RequestIDMiddleware())
+	router.Use(middlewares.LoggingMiddleware())
 
 	// Register routes
 	routes.TokenRoute(router, logger, cryptoService, redisClient, tokenService)
 	routes.SecretRoutes(router, logger, cryptoService, redisClient, tokenService)
+
+	// Register Swagger route
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Start the server
 	serverAddress := fmt.Sprintf(":%s", appPort)

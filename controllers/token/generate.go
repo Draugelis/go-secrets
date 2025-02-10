@@ -13,7 +13,15 @@ import (
 const DefaultTTL = 900 // Default TTL of 15 minutes
 const MaxTTL = 3600    // Max TTL of 60 minutes
 
-// IssueToken handles the generation and storage of a new token with a specified TTL.
+// @Summary Generate a token
+// @Description Generates a short-lived token for secret operations
+// @Tags token
+// @Produce json
+// @Param ttl query int false "Token TTL in seconds"
+// @Success 200 {object} models.IssueTokenResponse "Generated token"
+// @Failure 400 {object} models.ErrorResponse "Invalid TTL"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /token [get]
 func (tc *TokenControllerImpl) Generate(ctx *gin.Context) {
 	requestCtx := ctx.Request.Context()
 	requestID := ctx.GetString("request_id")
