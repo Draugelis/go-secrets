@@ -1,0 +1,212 @@
+basePath: /
+definitions:
+  models.ErrorResponse:
+    description: API error response format
+    properties:
+      message:
+        type: string
+      request_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  models.GetSecretResponse:
+    description: Get secret response format
+    properties:
+      ttl:
+        type: integer
+      value:
+        type: string
+    type: object
+  models.IssueTokenResponse:
+    description: Issue token response format
+    properties:
+      token:
+        type: string
+      ttl:
+        type: integer
+    type: object
+  models.StoreSecretRequest:
+    description: Store secret request format
+    properties:
+      value:
+        type: string
+    required:
+    - value
+    type: object
+  models.StoreSecretResponse:
+    description: Store secret response format
+    properties:
+      key:
+        type: string
+      ttl:
+        type: integer
+    type: object
+  models.TokenValidationResponse:
+    description: Token validation response format
+    properties:
+      valid:
+        type: boolean
+    type: object
+host: localhost:8888
+info:
+  contact: {}
+  description: A simple API for managing secrets using Redis.
+  title: Go Secrets API
+  version: "0.1"
+paths:
+  /secret/{key}:
+    delete:
+      description: Deletes a secret by key path
+      parameters:
+      - description: Secret key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Missing key path
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a secret
+      tags:
+      - secret
+    get:
+      description: Gets a secret by key path
+      parameters:
+      - description: Secret key
+        in: path
+        name: key
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Secret retrieved
+          schema:
+            $ref: '#/definitions/models.GetSecretResponse'
+        "400":
+          description: Missing key path
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Retrieve a secret
+      tags:
+      - secret
+    post:
+      consumes:
+      - application/json
+      description: Stores a secret with a key path
+      parameters:
+      - description: Secret key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Secret data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.StoreSecretRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Secret stored
+          schema:
+            $ref: '#/definitions/models.StoreSecretResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Store a secret
+      tags:
+      - secret
+  /token:
+    delete:
+      description: Deletes all stored secrets for the authenticated token
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete all secrets for a token
+      tags:
+      - token
+    get:
+      description: Generates a short-lived token for secret operations
+      parameters:
+      - description: Token TTL in seconds
+        in: query
+        name: ttl
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Generated token
+          schema:
+            $ref: '#/definitions/models.IssueTokenResponse'
+        "400":
+          description: Invalid TTL
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Generate a token
+      tags:
+      - token
+  /token/valid:
+    get:
+      description: Validates if a token is still active
+      responses:
+        "200":
+          description: Token is valid
+          schema:
+            $ref: '#/definitions/models.TokenValidationResponse'
+        "401":
+          description: Invalid or expired token
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Validate a token
+      tags:
+      - token
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer {your_token}" into the field below
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

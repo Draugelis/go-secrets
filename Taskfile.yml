@@ -1,0 +1,52 @@
+version: '3'
+
+vars:
+  DOCKER_COMPOSE_FILE: docker/docker-compose.yml
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  docker:build:
+    desc: Build the Docker image
+    cmds:
+      - docker-compose -f {{.DOCKER_COMPOSE_FILE}} build
+
+  docker:up:
+    desc: Run the app with Redis
+    cmds:
+      - docker-compose -f {{.DOCKER_COMPOSE_FILE}} up --build -d
+
+  docker:stop:
+    desc: Stop the running containers
+    cmds:
+      - docker-compose -f {{.DOCKER_COMPOSE_FILE}} down
+
+  docker:clean:
+    desc: Remove unused Docker resources
+    cmds:
+      - docker system prune -f
+
+  go:build:
+    desc: Build the Go binary
+    cmds:
+      - CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o go-secrets .
+
+  go:run:
+    desc: Run the application locally
+    env:
+      REDIS_URL: "redis://localhost:6379"
+    cmds:
+      - go run main.go
+
+  go:tidy:
+    desc: Clean up and verify dependencies
+    cmds:
+      - go mod tidy
+
+  go:test:
+    desc: Run tests
+    cmds:
+      - go test ./...
